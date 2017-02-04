@@ -5,12 +5,10 @@ var owns = {}.hasOwnProperty;
 
 module.exports = function proxyMiddleware(options) {
   //enable ability to quickly pass a url for shorthand setup
+  var urlParser = require('url');
   if(typeof options === 'string'){
-      options = require('url').parse(options);
-  }
-
-  var httpLib = options.protocol === 'https:' ? https : http;
-  var request = httpLib.request;
+      options = urlParser.parse(options);
+  }  
 
   options = options || {};
   options.hostname = options.hostname;
@@ -18,7 +16,26 @@ module.exports = function proxyMiddleware(options) {
   options.pathname = options.pathname || '/';
 
   return function (req, resp, next) {
-    var url = req.url;
+    var url = req.url,
+        targetOptions,
+        httpLib,
+        request;
+
+    // override options with target url from header
+    if (req.headers['target-uri']) {      
+      targetOptions = urlParser.parse(req.headers['target-uri']);
+
+      options.protocol = targetOptions.protocol;
+      options.hostname = targetOptions.hostname;
+      options.post = targetOptions.port;
+      options.pathname = targetOptions.pathname || '/';  
+
+      delete req.headers['target-uri'];    
+    }
+
+    httpLib = options.protocol === 'https:' ? https : http;
+    request = httpLib.request;
+
     // You can pass the route within the options, as well
     if (typeof options.route === 'string') {
       if (url === options.route) {
