@@ -151,7 +151,7 @@ function dropCookiePath(existingHeaders, opts, applyTo, req) {
     }
 
     for (var i = 0; i < existingCookies.length; i++) {
-      var rewrittenCookie = existingCookies[i].replace(/(path)=[a-z\.-_\/]*/gi, '$1=/');
+      var rewrittenCookie = existingCookies[i].replace(/(path)=[a-z\.-_\/]*(;|$)/gi, '$1=/$2');
       
       rewrittenCookies.push(rewrittenCookie);
     }
