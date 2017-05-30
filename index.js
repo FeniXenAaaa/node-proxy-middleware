@@ -81,6 +81,7 @@ module.exports = function proxyMiddleware(options) {
       }
       applyViaHeader(myRes.headers, opts, myRes.headers);
       rewriteCookieHosts(myRes.headers, opts, myRes.headers, req);
+      dropCookiePath(myRes.headers, opts, myRes.headers, req);
       resp.writeHead(myRes.statusCode, myRes.headers);
       myRes.on('error', function (err) {
         next(err);
@@ -133,6 +134,30 @@ function rewriteCookieHosts(existingHeaders, opts, applyTo, req) {
   }
 
   applyTo['set-cookie'] = rewrittenCookies;
+}
+
+function dropCookiePath(existingHeaders, opts, applyTo, req) {
+  if (!opts.dropCookiePath || !owns.call(existingHeaders, 'set-cookie')) {
+    return;
+  }
+
+  var existingCookies = existingHeaders['set-cookie'],
+      rewrittenCookies = [],
+      dropPath = true === opts.dropCookiePath;
+
+  if (dropPath) {
+    if (!Array.isArray(existingCookies)) {
+      existingCookies = [ existingCookies ];
+    }
+
+    for (var i = 0; i < existingCookies.length; i++) {
+      var rewrittenCookie = existingCookies[i].replace(/(path)=[a-z\.-_\/]*/gi, '$1=/');
+      
+      rewrittenCookies.push(rewrittenCookie);
+    }
+
+    applyTo['set-cookie'] = rewrittenCookies;
+  }  
 }
 
 function slashJoin(p1, p2) {
